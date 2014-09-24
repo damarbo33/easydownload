@@ -1,8 +1,36 @@
-#!/bin/sh
+#!/bin/bash
 
 pDownDir="/media/WII/Descargas/wget"
 pLogFile="easydownloader.dat"
 fileDescargar=""
+
+resumirConsolas(){
+	clear
+	texto="$1"
+	b=".pts-"
+	numSesiones=0
+	
+	pos=`expr index "$texto" $b`
+	while [ $pos -gt 0 ]
+	do	
+		texto=${texto%$b*}
+		len=`expr ${#first} - 4`
+		echo ${texto:len:4}
+		pos=`expr index "$texto" $b`
+		numSesiones=`expr $numSesiones + 1`
+	done
+
+	if [ $numSesiones -gt 1 ]; then
+		echo "Introduce el numero de consola de screen que deseas recuperar"
+		read consoleNum
+		sudo screen -r $consoleNum
+	else 
+		echo "No hay descargas en segundo plano"
+		read consoleNum
+	fi
+
+}
+
 
 buscarEnString(){
 	fileDescargar=""
@@ -31,8 +59,8 @@ xbmcUtils(){
 
 # Funcion para realizar un test de velocidad de descarga
 netTest(){
-	rm -fR Firefox%20Setup*
-	sudo screen wget --no-check-certificate https://ftp.mozilla.org/pub/mozilla.org/firefox/releases/22.0/win32/en-US/Firefox%20Setup%2022.0.exe
+	rm -fR Firefox*
+	wget --no-check-certificate https://ftp.mozilla.org/pub/mozilla.org/firefox/releases/22.0/win32/en-US/Firefox%20Setup%2022.0.exe
 }
 
 # Funcion para reiniciar el pc
@@ -65,8 +93,9 @@ logDownload(){
 #	$4 - nombre del fichero que se guardara en el disco (opcional)
 authDownload(){
 	logDownload $1 $2 $3 $4
+
 	if [ "$4" = "" ]; then
-		sudo screen wget -c -P $pDownDir --http-user=$2 --http-password=$3 --no-check-certificate $1
+		sudo screen wget -c -P $pDownDir --http-user=$2 --http-password=$3 --no-check-certificate "$1"
 	else 
 		sudo screen wget -c -P $pDownDir --http-user=$2 --http-password=$3 -O "$pDownDir/$4" --no-check-certificate "$1"
 	fi
@@ -78,7 +107,7 @@ authDownload(){
 directDownload(){
 	logDownload $1 "" "" $2
 	if [ "$2" = "" ]; then
-		sudo screen wget -c -P $pDownDir --no-check-certificate $1
+		sudo screen wget -c -P $pDownDir --no-check-certificate "$1"
 	else
 		sudo screen wget -c -P $pDownDir -O "$pDownDir/$2" --no-check-certificate "$1"
 	fi
@@ -210,7 +239,9 @@ do
 		read pPass 
 		authDownload $pUrl $pUser $pPass $pFilename
 	elif [ $dType -eq "3" ]; then
-		sudo screen -r
+		pConsoles=`sudo screen -r | grep .pts`
+		resumirConsolas "$pConsoles"
+		
 	elif [ $dType -eq "4" ]; then
 		historyDownload
 	elif [ $dType -eq "5" ]; then
@@ -224,6 +255,7 @@ do
 	elif [ $dType -eq "9" ]; then
 		restartPC
 	fi
+	clear
 	echo "¿Deseas descargar algo más? [S/N]"
 	read pContinue
 	if [ "$pContinue" = "S" ] || [ "$pContinue" = "s" ]; then
